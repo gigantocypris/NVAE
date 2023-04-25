@@ -25,6 +25,7 @@ from fid.inception import InceptionV3
 
 
 def main(args):
+    breakpoint()
     # ensures that weight initializations are all the same
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
