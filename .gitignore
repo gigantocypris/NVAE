@@ -4,3 +4,5 @@ visualizations/
 *.pyc
 *.pdf
 .DS_Store
+data/*
+checkpts/*
