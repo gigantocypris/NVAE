@@ -317,8 +317,11 @@ def test_vae_fid(model, args, total_fid_samples):
 
 def init_processes(rank, size, fn, args):
     """ Initialize the distributed environment. """
-    os.environ['MASTER_ADDR'] = args.master_address
-    os.environ['MASTER_PORT'] = '6020'
+    if args.use_nersc:
+        os.environ['MASTER_PORT'] = 29500
+    else:
+        os.environ['MASTER_ADDR'] = args.master_address
+        os.environ['MASTER_PORT'] = '6020'
     torch.cuda.set_device(args.local_rank)
     dist.init_process_group(backend='nccl', init_method='env://', rank=rank, world_size=size)
     fn(args)
@@ -433,6 +436,9 @@ if __name__ == '__main__':
                         help='address for master')
     parser.add_argument('--seed', type=int, default=1,
                         help='seed used for initialization')
+    parser.add_argument('--use_nersc', action='store_true', default=False,
+                        help='This flag is for running on NERSC.')
+    
     args = parser.parse_args()
     args.save = args.root + '/eval-' + args.save
     utils.create_exp_dir(args.save)
