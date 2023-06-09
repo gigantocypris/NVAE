@@ -1,4 +1,4 @@
-Setup on Strelka:
+# Setup on Strelka:
 
 Navigate to:
 https://strelka.swarthmore.edu/
@@ -32,9 +32,6 @@ Create conda environment with Tomopy and install PyTorch 2.0:
 conda create --name tomopy --channel conda-forge tomopy python=3.9
 conda activate tomopy
 conda install pytorch==2.0 torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia
-
-conda install pytorch torchvision torchaudio -c pytorch
-
 ```
 
 Test PyTorch GPU installation:
@@ -69,6 +66,7 @@ quit()
 Install the other conda dependencies:
 ```
 conda install h5py
+conda install xdesign -c conda-forge
 ```
 
 Install the other pip dependencies:
@@ -120,3 +118,48 @@ python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --
 # Add an option to NVAE to train the CT_NVAE
 
 # Get final metrics
+
+# Setup on MacBook Pro
+
+Install Anaconda or miniconda if necessary.
+
+Update conda:
+```
+conda update -n base -c defaults conda
+```
+
+Navigate to the directory where you want the code to reside and clone the repository.
+```
+git clone https://github.com/gigantocypris/NVAE.git
+```
+
+Create conda environment with Tomopy and install PyTorch 2.0: 
+```
+conda create --name tomopy --channel conda-forge tomopy python=3.9
+conda activate tomopy
+conda install pytorch::pytorch torchvision torchaudio -c pytorch
+```
+
+
+Install the other conda dependencies:
+```
+conda install h5py
+conda install xdesign -c conda-forge
+```
+
+Install the other pip dependencies:
+```
+pip install --upgrade pip
+python -m pip install -r requirements.txt
+pip install --upgrade tensorflow-probability
+```
+
+To use the conda environment:
+```
+conda activate tomopy
+```
+
+To exit the conda environment:
+```
+conda deactivate
+```
