@@ -193,6 +193,7 @@ class AutoEncoder(nn.Module):
         self.num_power_iter = 4
 
     def init_stem(self):
+        """Initial conversion of number of channels"""
         Cout = self.num_channels_enc
         Cin = 1 if self.dataset in {'mnist', 'omniglot'} else 3
         stem = Conv2D(Cin, Cout, 3, padding=1, bias=True)

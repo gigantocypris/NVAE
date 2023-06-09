@@ -25,7 +25,6 @@ from fid.inception import InceptionV3
 
 
 def main(args):
-    breakpoint()
     # ensures that weight initializations are all the same
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -62,7 +61,7 @@ def main(args):
         cnn_optimizer, float(args.epochs - args.warmup_epochs - 1), eta_min=args.learning_rate_min)
     grad_scalar = GradScaler(2**10)
 
-    num_output = utils.num_output(args.dataset)
+    num_output = utils.num_output(args.dataset) # total number of output pixels
     bpd_coeff = 1. / np.log(2.) / num_output
 
     # if load
