@@ -208,3 +208,8 @@ To create sinograms from the foam images:
 ```
 python $CT_PVAE_PATH/scripts/images_to_sinograms.py -n 50
 ```
+
+# TODO
+
+version numbers for all packages in the install directions
+transfer all code from CT_PVAE needed to NVAE repo
