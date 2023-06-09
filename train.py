@@ -318,7 +318,7 @@ def test_vae_fid(model, args, total_fid_samples):
 def init_processes(rank, size, fn, args):
     """ Initialize the distributed environment. """
     if args.use_nersc:
-        os.environ['MASTER_PORT'] = 29500
+        os.environ['MASTER_PORT'] = '29500'
     else:
         os.environ['MASTER_ADDR'] = args.master_address
         os.environ['MASTER_PORT'] = '6020'
