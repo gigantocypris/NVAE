@@ -71,7 +71,9 @@ conda install xdesign -c conda-forge
 
 Install the other pip dependencies:
 ```
+pip install --upgrade pip
 python -m pip install -r requirements.txt
+pip install --upgrade tensorflow-probability
 ```
 
 To use the conda environment:
