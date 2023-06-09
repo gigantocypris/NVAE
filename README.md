@@ -213,3 +213,4 @@ python $CT_PVAE_PATH/scripts/images_to_sinograms.py -n 50
 
 version numbers for all packages in the install directions
 transfer all code from CT_PVAE needed to NVAE repo
+update directions for install and running end-to-end
