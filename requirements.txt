@@ -17,5 +17,4 @@ astropy
 kornia
 imageio
 glob2
-tensorflow
-tensorflow-addons
+

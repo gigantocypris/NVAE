@@ -73,7 +73,6 @@ Install the other pip dependencies:
 ```
 pip install --upgrade pip
 python -m pip install -r requirements.txt
-pip install --upgrade tensorflow-probability
 ```
 
 To use the conda environment:
@@ -122,6 +121,7 @@ python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --
 # Get final metrics
 
 # Setup on MacBook Pro
+This setup can only be used for generating data and/or running CT_PVAE, NVAE will not work on a MacBook Pro as an NVIDIA GPU is required.
 
 Install Anaconda or miniconda if necessary.
 
@@ -130,9 +130,10 @@ Update conda:
 conda update -n base -c defaults conda
 ```
 
-Navigate to the directory where you want the code to reside and clone the repository.
+Navigate to the directory where you want the code to reside and clone the repositories.
 ```
 git clone https://github.com/gigantocypris/NVAE.git
+git clone https://github.com/vganapati/CT_PVAE.git
 ```
 
 Create conda environment with Tomopy and install PyTorch 2.0: 
@@ -153,8 +154,7 @@ Install the other pip dependencies:
 python -m pip install --upgrade pip
 python -m pip install torch torchvision torchaudio
 python -m pip install h5py
-python -m pip install -r requirements.txt
-python -m pip install --upgrade tensorflow-probability
+python -m pip install -r NVAE/requirements.txt
 ```
 
 To exit the conda environment:
@@ -193,5 +193,18 @@ Run the following to create a synthetic foam dataset of 50 examples, saved in th
 
 ```
 python $CT_PVAE_PATH/scripts/create_foam_images.py -n 50
+```
+
+To visualize:
+```
+python
+import numpy as np
+foam_imgs = np.load('foam_training.npy')
+import matplotlib.pyplot as plt
+plt.imshow(foam_imgs[0,:,:]); plt.show()
+```
+
+To create sinograms from the foam images:
+```
 python $CT_PVAE_PATH/scripts/images_to_sinograms.py -n 50
 ```
