@@ -139,7 +139,6 @@ Create conda environment with Tomopy and install PyTorch 2.0:
 ```
 conda create --name tomopy --channel conda-forge tomopy python=3.9
 conda activate tomopy
-conda install pytorch::pytorch torchvision torchaudio -c pytorch
 ```
 
 
@@ -151,9 +150,11 @@ conda install xdesign -c conda-forge
 
 Install the other pip dependencies:
 ```
-pip install --upgrade pip
+python -m pip install --upgrade pip
+python -m pip install torch torchvision torchaudio
+python -m pip install h5py
 python -m pip install -r requirements.txt
-pip install --upgrade tensorflow-probability
+python -m pip install --upgrade tensorflow-probability
 ```
 
 To use the conda environment:
@@ -164,4 +165,38 @@ conda activate tomopy
 To exit the conda environment:
 ```
 conda deactivate
+```
+
+# Running End-to-End
+
+Activate your environment if not already activated:
+```
+conda activate tomopy
+```
+
+Create a working directory:
+```
+mkdir working_dir
+```
+
+Create an environment variable pointing to the CT_PVAE directory:
+```
+export CT_PVAE_PATH=path_to_CT_PVAE
+```
+
+Navigate to the working directory
+```
+cd working_dir
+```
+
+Set your PYTHONPATH to include the CT_PVAE directory:
+```
+export PYTHONPATH=$PYTHONPATH:$CT_PVAE_PATH
+```
+
+Run the following to create a synthetic foam dataset of 50 examples, saved in the subfolder `dataset_foam` of the current directory:
+
+```
+python $CT_PVAE_PATH/scripts/create_foam_images.py -n 50
+python $CT_PVAE_PATH/scripts/images_to_sinograms.py -n 50
 ```
