@@ -115,9 +115,31 @@ python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --
         --ada_groups --num_process_per_node 1 --use_se --res_dist --fast_adamax
 ```
 
-# Training NVAE on NERSC
+# Setup on NERSC
 
-TODO: Setup directions (see project-management/notes_NVAE for now)
+TODO: Setup directions should be updated to include the packages in the directions for Strelka
+
+```
+cd $HOME
+module load python
+conda create -n NVAE_2 python=3.7 -y
+conda activate NVAE_2
+git clone https://github.com/gigantocypris/NVAE.git
+cd NVAE
+```
+
+```
+mkdir data
+mkdir checkpts
+```
+
+```
+conda install pytorch==1.13.1 torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia
+pip install -r requirements.txt
+python -m pip install scipy
+```
+
+# Training NVAE on NERSC
 
 ```
 module load python 
@@ -133,6 +155,7 @@ export MASTER_ADDR=$(hostname)
 
 ```
 
+Single GPU training:
 ```
 python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --dataset mnist --batch_size 200 \
         --epochs 4 --num_latent_scales 2 --num_groups_per_scale 10 --num_postprocess_cells 2 --num_preprocess_cells 2 \
@@ -141,9 +164,18 @@ python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --
         --ada_groups --num_process_per_node 1 --use_se --res_dist --fast_adamax --use_nersc
 ```
 
+Multi GPU training:
+```
+python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --dataset mnist --batch_size 200 \
+        --epochs 4 --num_latent_scales 2 --num_groups_per_scale 10 --num_postprocess_cells 2 --num_preprocess_cells 2 \
+        --num_cell_per_cond_enc 2 --num_cell_per_cond_dec 2 --num_latent_per_group 3 --num_preprocess_blocks 2 \
+        --num_postprocess_blocks 2 --weight_decay_norm 1e-2 --num_channels_enc 4 --num_channels_dec 4 --num_nf 0 \
+        --ada_groups --num_process_per_node 4 --use_se --res_dist --fast_adamax --use_nersc
+```
 
 # Setup on MacBook Pro
-This setup can only be used for generating data and/or running CT_PVAE, NVAE will not work on a MacBook Pro as an NVIDIA GPU is required.
+
+This setup can only be used for generating data, NVAE will not work on a MacBook Pro as an NVIDIA GPU is required.
 
 Install Anaconda or miniconda if necessary.
 
@@ -229,3 +261,5 @@ TODO: reconstruct from sparse sinograms
 
 version numbers for all packages in the install directions
 
+
+/global/homes/X/XX/.conda/envs/NVAE_2/lib/python3.7/site-packages/torch/distributed/distributed_c10d.py:2388: UserWarning: torch.distributed._all_gather_base is a private function and will be deprecated. Please use torch.distributed.all_gather_into_tensor instead.
