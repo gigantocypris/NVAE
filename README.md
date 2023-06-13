@@ -1,3 +1,63 @@
+# Setup on remote server:
+
+Navigate to the directory (Documents) where you want the code to reside and clone the repository.
+```
+git clone https://github.com/gigantocypris/NVAE.git
+```
+
+Create conda environment with Tomopy: 
+```
+conda create --name tomopy --channel conda-forge tomopy=1.14.1 python=3.9
+conda activate tomopy
+```
+This environment will be used for all Tomopy preprocessing.
+
+Activate the PINN environment:
+```
+conda activate PINN
+```
+
+Install the other pip dependencies in the PINN environment:
+```
+pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+
+Run NVAE in the PINN environment:
+
+Navigate to the directory containing NVAE:
+```
+cd NVAE
+mkdir data
+mkdir checkpts
+```
+
+Training NVAE with MNIST, 4 GPUs (number of GPUs is in --num_process_per_node):
+```
+export EXPR_ID=test_0000
+export DATA_DIR=data
+export CHECKPOINT_DIR=checkpts
+export MASTER_ADDR=localhost
+```
+
+Full MNIST example:
+```
+python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --dataset mnist --batch_size 200 \
+        --epochs 400 --num_latent_scales 2 --num_groups_per_scale 10 --num_postprocess_cells 3 --num_preprocess_cells 3 \
+        --num_cell_per_cond_enc 2 --num_cell_per_cond_dec 2 --num_latent_per_group 20 --num_preprocess_blocks 2 \
+        --num_postprocess_blocks 2 --weight_decay_norm 1e-2 --num_channels_enc 32 --num_channels_dec 32 --num_nf 0 \
+        --ada_groups --num_process_per_node 4 --use_se --res_dist --fast_adamax
+```
+
+Small number of epochs/smaller network for MNIST:
+```
+python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --dataset mnist --batch_size 200 --epochs 2 --num_latent_scales 2 --num_groups_per_scale 10 --num_postprocess_cells 2 --num_preprocess_cells 2 --num_cell_per_cond_enc 2 --num_cell_per_cond_dec 2 --num_latent_per_group 3 --num_preprocess_blocks 2 --num_postprocess_blocks 2 --weight_decay_norm 1e-2 --num_channels_enc 4 --num_channels_dec 4 --num_nf 0 --ada_groups --num_process_per_node 4 --use_se --res_dist --fast_adamax
+```
+
+Launch Tensorboard to view results:
+tensorboard --logdir $CHECKPOINT_DIR/eval-$EXPR_ID/
+
 # Setup on Strelka:
 
 Navigate to:
@@ -99,18 +159,12 @@ Training NVAE with MNIST, single GPU (for multiple GPUs, increase --num_process_
 export EXPR_ID=test_0000
 export DATA_DIR=data
 export CHECKPOINT_DIR=checkpts
-python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --dataset mnist --batch_size 200 \
-        --epochs 400 --num_latent_scales 2 --num_groups_per_scale 10 --num_postprocess_cells 3 --num_preprocess_cells 3 \
-        --num_cell_per_cond_enc 2 --num_cell_per_cond_dec 2 --num_latent_per_group 20 --num_preprocess_blocks 2 \
-        --num_postprocess_blocks 2 --weight_decay_norm 1e-2 --num_channels_enc 32 --num_channels_dec 32 --num_nf 0 \
-        --ada_groups --num_process_per_node 1 --use_se --res_dist --fast_adamax
+python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --dataset mnist --batch_size 200 --epochs 400 --num_latent_scales 2 --num_groups_per_scale 10 --num_postprocess_cells 3 --num_preprocess_cells 3 --num_cell_per_cond_enc 2 --num_cell_per_cond_dec 2 --num_latent_per_group 20 --num_preprocess_blocks 2 --num_postprocess_blocks 2 --weight_decay_norm 1e-2 --num_channels_enc 32 --num_channels_dec 32 --num_nf 0 --ada_groups --num_process_per_node 1 --use_se --res_dist --fast_adamax
 ```
 
 Small number of epochs/smaller network
 ```
-python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --dataset mnist --batch_size 200 \
-        --epochs 4 --num_latent_scales 2 --num_groups_per_scale 10 --num_postprocess_cells 2 --num_preprocess_cells 2 \
-        --num_cell_per_cond_enc 2 --num_cell_per_cond_dec 2 --num_latent_per_group 3 --num_preprocess_blocks 2 \
+python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --dataset mnist --batch_size 200 --epochs 4 --num_latent_scales 2 --num_groups_per_scale 10 --num_postprocess_cells 2 --num_preprocess_cells 2 --num_cell_per_cond_enc 2 --num_cell_per_cond_dec 2 --num_latent_per_group 3 --num_preprocess_blocks 2 \
         --num_postprocess_blocks 2 --weight_decay_norm 1e-2 --num_channels_enc 4 --num_channels_dec 4 --num_nf 0 \
         --ada_groups --num_process_per_node 1 --use_se --res_dist --fast_adamax
 ```
@@ -172,6 +226,8 @@ python train.py --data $DATA_DIR/mnist --root $CHECKPOINT_DIR --save $EXPR_ID --
         --num_postprocess_blocks 2 --weight_decay_norm 1e-2 --num_channels_enc 4 --num_channels_dec 4 --num_nf 0 \
         --ada_groups --num_process_per_node 4 --use_se --res_dist --fast_adamax --use_nersc
 ```
+
+TODO: Try Tensorboard on NERSC
 
 # Setup on MacBook Pro
 
