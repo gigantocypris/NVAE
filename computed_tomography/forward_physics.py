@@ -28,7 +28,7 @@ def pad_phantom(phantom,
     return(phantom)
 
 
-def project_torch(phantom, theta_degrees, pad = True, 
+def project_torch(phantom, theta_degrees, pad=True, 
                   ):
     '''
     phantom is batch_size x img_size_x x img_size_y x 1
@@ -40,8 +40,7 @@ def project_torch(phantom, theta_degrees, pad = True,
     if pad:
         phantom = pad_phantom(phantom)
     
-    #phantom = torch.transpose(phantom, perm=[3,1,2,0])
-    phantom = phantom.repeat(1,1,1,num_angles) # XXX CHECK THIS IS THE SAME
+    phantom = phantom.repeat(1,1,1,num_angles)
     phantom = torch.transpose(phantom, 2,3)
     phantom = torch.transpose(phantom, 1,2)
     phantom = torch.transpose(phantom, 0,1)

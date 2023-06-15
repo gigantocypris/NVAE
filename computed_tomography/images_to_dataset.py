@@ -9,7 +9,8 @@ import time
 
 def main():
     parser = argparse.ArgumentParser(description='Get command line args')
-    parser.add_argument('-n','--num-train', type=int, help='number of points', default=15000)
+    parser.add_argument('-n',dest='num_truncate', type=int, help='number of points', default=64)
+    parser.add_argument('-d',dest='dataset_type', type=str, help='dataset type')
     parser.add_argument('--pnm', dest='pnm', type=float, help='poisson noise multiplier, higher value means higher SNR', default=1e3)
     args = parser.parse_args()
 
@@ -18,7 +19,7 @@ def main():
     theta = np.linspace(0, np.pi, 180, endpoint=False) # projection angles
     img_type = 'foam' # 'mnist' or 'foam'
     pad = True
-    truncate_dataset = args.num_train
+    truncate_dataset = args.num_truncate
     num_sparse_angles = 10 # number of angles to image per sample (dose remains the same)
     random = False # If True, randomly pick angles
     #############
@@ -29,7 +30,7 @@ def main():
     # pull images that are normalized from 0 to 1
     # 0th dimension should be the batch dimension
     # 1st and 2nd dimensions should be spatial x and y coords, respectively
-    x_train_imgs = get_images(img_type = img_type)
+    x_train_imgs = get_images(img_type = img_type, dataset_type=args.dataset_type)
     x_train_imgs = x_train_imgs[0:truncate_dataset]
     
     # Create sinograms all at once
@@ -51,12 +52,12 @@ def main():
     
     x_train_sinograms[x_train_sinograms<0]=0
     
-    np.save(save_path + '/x_train_sinograms.npy', x_train_sinograms)
-    np.save(save_path + '/theta.npy', theta)
-    np.save(save_path + '/num_proj_pix.npy', num_proj_pix)
+    np.save(save_path + '/' + args.dataset_type + '_sinograms.npy', x_train_sinograms)
+    np.save(save_path + '/' + args.dataset_type + '_theta.npy', theta)
+    np.save(save_path + '/' + args.dataset_type + '_num_proj_pix.npy', num_proj_pix)
 
-    np.save(save_path + '/x_size.npy', x_train_imgs.shape[1]) # size of original image
-    np.save(save_path + '/y_size.npy', x_train_imgs.shape[2]) # size of original image
+    np.save(save_path + '/' + args.dataset_type + '_x_size.npy', x_train_imgs.shape[1]) # size of original image
+    np.save(save_path + '/' + args.dataset_type + '_y_size.npy', x_train_imgs.shape[2]) # size of original image
     
     print("Shape of sinograms: ", x_train_sinograms.shape)
     print("Shape of original training images: ", x_train_imgs.shape)
@@ -69,9 +70,9 @@ def main():
                           random = random, # If True, randomly pick angles
                          )
 
-    np.save(save_path + '/masks.npy', all_mask_inds)
-    np.save(save_path + '/reconstructions.npy', all_reconstructed_objects)
-    np.save(save_path + '/sparse_sinograms.npy', all_sparse_sinograms)
+    np.save(save_path + '/' + args.dataset_type + '_masks.npy', all_mask_inds)
+    np.save(save_path + '/' + args.dataset_type + '_reconstructions.npy', all_reconstructed_objects)
+    np.save(save_path + '/' + args.dataset_type + '_sparse_sinograms.npy', all_sparse_sinograms)
 
 if __name__ == '__main__':
     start_time = time.time()

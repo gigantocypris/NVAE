@@ -6,3 +6,5 @@ visualizations/
 .DS_Store
 data/*
 checkpts/*
+dataset_foam/*
+*.npy

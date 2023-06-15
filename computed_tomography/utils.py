@@ -1,7 +1,6 @@
 import tomopy
 import numpy as np
 import os
-import torch.nn.functional as F
 
 def create_folder(save_path=None,**kwargs):
     try: 
@@ -16,8 +15,8 @@ def create_sinogram(img_stack, theta, pad=True):
     proj = np.transpose(proj, (1, 0, 2))
     return proj
 
-def get_images(img_type = 'foam'):
-    x_train = np.load(img_type + '_training.npy')
+def get_images(img_type = 'foam', dataset_type = 'train'):
+    x_train = np.load(img_type + '_' + str(dataset_type) + '.npy')
     return(x_train)
 
 def create_sparse_dataset(x_train_sinograms, 

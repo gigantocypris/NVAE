@@ -149,6 +149,7 @@ def get_loaders_eval(dataset, args):
         valid_data = dset.CIFAR10(
             root=args.data, train=False, download=True, transform=valid_transform)
     elif dataset == 'mnist':
+        breakpoint()
         num_classes = 10
         train_transform, valid_transform = _data_transforms_mnist(args)
         train_data = dset.MNIST(
@@ -157,8 +158,18 @@ def get_loaders_eval(dataset, args):
             root=args.data, train=False, download=True, transform=valid_transform)
     elif dataset == 'foam':
         train_transform, valid_transform = _data_transforms_foam(args)
-        train_data = Foam(np.load('dataset_foam/training_data.npy'),train_transform)
-        valid_data = Foam(np.load('dataset_foam/valid_data.npy'),valid_transform)
+        # XXX STOPPED HERE
+        train_reconstruction = np.load('/home/microway/Documents/NVAE/dataset_foam/train_reconstructions.npy')
+        valid_reconstruction = np.load('/home/microway/Documents/NVAE/dataset_foam/valid_reconstructions.npy')
+
+        train_sinogram = np.load('/home/microway/Documents/NVAE/dataset_foam/train_sinograms.npy')
+        valid_sinogram = np.load('/home/microway/Documents/NVAE/dataset_foam/valid_sinograms.npy')
+
+        train_mask = np.load('/home/microway/Documents/NVAE/dataset_foam/train_masks.npy')
+        valid_mask = np.load('/home/microway/Documents/NVAE/dataset_foam/valid_masks.npy')
+
+        train_data = Foam(train_data,train_transform)
+        valid_data = Foam(valid_data,valid_transform)
 
     elif dataset == 'stacked_mnist':
         num_classes = 1000

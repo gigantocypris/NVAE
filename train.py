@@ -25,6 +25,7 @@ from fid.inception import InceptionV3
 
 
 def main(args):
+    breakpoint()
     # ensures that weight initializations are all the same
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -143,6 +144,7 @@ def main(args):
 
 
 def train(train_queue, model, cnn_optimizer, grad_scalar, global_step, warmup_iters, writer, logging):
+    breakpoint()
     alpha_i = utils.kl_balancer_coeff(num_scales=model.num_latent_scales,
                                       groups_per_scale=model.groups_per_scale, fun='square')
     nelbo = utils.AvgrageMeter()
@@ -169,6 +171,8 @@ def train(train_queue, model, cnn_optimizer, grad_scalar, global_step, warmup_it
             logits, log_q, log_p, kl_all, kl_diag = model(x)
 
             output = model.decoder_output(logits)
+            breakpoint()
+            # output = model.forward_physics(output.sample())
             kl_coeff = utils.kl_coeff(global_step, args.kl_anneal_portion * args.num_total_iter,
                                       args.kl_const_portion * args.num_total_iter, args.kl_const_coeff)
 

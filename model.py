@@ -20,6 +20,8 @@ from utils import get_stride_for_cell_type, get_input_size, groups_per_scale
 from distributions import Normal, DiscMixLogistic, NormalDecoder
 from thirdparty.inplaced_sync_batchnorm import SyncBatchNormSwish
 
+from computed_tomography.forward_physics import project_torch
+
 CHANNEL_MULT = 2
 
 
@@ -195,7 +197,7 @@ class AutoEncoder(nn.Module):
     def init_stem(self):
         """Initial conversion of number of channels"""
         Cout = self.num_channels_enc
-        Cin = 1 if self.dataset in {'mnist', 'omniglot'} else 3
+        Cin = 1 if self.dataset in {'mnist', 'omniglot', 'foam'} else 3
         stem = Conv2D(Cin, Cout, 3, padding=1, bias=True)
         return stem
 
@@ -484,7 +486,7 @@ class AutoEncoder(nn.Module):
         return logits
 
     def decoder_output(self, logits):
-        if self.dataset in {'mnist', 'omniglot'}:
+        if self.dataset in {'mnist', 'omniglot','foam'}:
             return Bernoulli(logits=logits)
         elif self.dataset in {'stacked_mnist', 'cifar10', 'celeba_64', 'celeba_256', 'imagenet_32', 'imagenet_64', 'ffhq',
                               'lsun_bedroom_128', 'lsun_bedroom_256', 'lsun_church_64', 'lsun_church_128'}:
@@ -494,6 +496,10 @@ class AutoEncoder(nn.Module):
                 return DiscMixLogistic(logits, self.num_mix_output, num_bits=self.num_bits)
         else:
             raise NotImplementedError
+
+    def forward_physics(self, phantom, theta_degrees, poisson_noise_multiplier, pad=True):
+        sino = project_torch(phantom, theta_degrees, pad=pad)
+        sino_dist = Normal(sino, np.log(np.sqrt(sino/poisson_noise_multiplier)))
 
     def spectral_norm_parallel(self):
         """ This method computes spectral normalization for all conv layers in parallel. This method should be called
