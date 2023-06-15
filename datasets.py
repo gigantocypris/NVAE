@@ -80,6 +80,7 @@ class CropCelebA64(object):
         return self.__class__.__name__ + '()'
 
 
+
 def get_loaders(args):
     """Get data loaders for required dataset."""
     return get_loaders_eval(args.dataset, args)
@@ -112,6 +113,17 @@ def load_omniglot(data_dir):
 
     return train_data, test_data
 
+class Foam(Dataset):
+    def __init__(self, data, transform):
+        self.data = data
+        self.transform = transform
+
+    def __getitem__(self, index):
+        d = self.transform(self.data[index])
+        return d, 0     # return zero as label.
+
+    def __len__(self):
+        return len(self.data)
 
 class OMNIGLOT(Dataset):
     def __init__(self, data, transform):
@@ -143,6 +155,11 @@ def get_loaders_eval(dataset, args):
             root=args.data, train=True, download=True, transform=train_transform)
         valid_data = dset.MNIST(
             root=args.data, train=False, download=True, transform=valid_transform)
+    elif dataset == 'foam':
+        train_transform, valid_transform = _data_transforms_foam(args)
+        train_data = Foam(np.load('dataset_foam/training_data.npy'),train_transform)
+        valid_data = Foam(np.load('dataset_foam/valid_data.npy'),valid_transform)
+
     elif dataset == 'stacked_mnist':
         num_classes = 1000
         train_transform, valid_transform = _data_transforms_stacked_mnist(args)
@@ -258,6 +275,21 @@ def _data_transforms_mnist(args):
 
     return train_transform, valid_transform
 
+def _data_transforms_foam(args):
+    """Get data transforms for foam dataset."""
+    train_transform = transforms.Compose([
+        transforms.Pad(padding=2),
+        transforms.ToTensor(),
+        Binarize(),
+    ])
+
+    valid_transform = transforms.Compose([
+        transforms.Pad(padding=2),
+        transforms.ToTensor(),
+        Binarize(),
+    ])
+
+    return train_transform, valid_transform
 
 def _data_transforms_stacked_mnist(args):
     """Get data transforms for cifar10."""
