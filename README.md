@@ -89,8 +89,15 @@ git clone https://github.com/gigantocypris/NVAE.git
 
 Create conda environment with Tomopy and install PyTorch 2.0: 
 ```
-conda create --name tomopy --channel conda-forge tomopy python=3.9
-conda activate tomopy
+conda create --name tomopy3 --channel conda-forge tomopy python=3.9
+conda activate tomopy3
+conda install xdesign -c conda-forge
+```
+
+Separate conda environment for Pytorch:
+```
+conda create --name pytorch python=3.9
+conda activate pytorch
 conda install pytorch==2.0 torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia
 ```
 
@@ -126,7 +133,6 @@ quit()
 Install the other conda dependencies:
 ```
 conda install h5py
-conda install xdesign -c conda-forge
 ```
 
 Install the other pip dependencies:
@@ -137,7 +143,7 @@ python -m pip install -r requirements.txt
 
 To use the conda environment:
 ```
-conda activate tomopy
+conda activate tomopy3
 ```
 
 To exit the conda environment:
