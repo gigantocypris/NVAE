@@ -114,16 +114,27 @@ def load_omniglot(data_dir):
     return train_data, test_data
 
 class Foam(Dataset):
-    def __init__(self, data, transform):
-        self.data = data
-        self.transform = transform
+    def __init__(self, sparse_recons, sparse_sino, masks, theta, 
+                 x_size, y_size, num_proj_pix,
+                 ):
+        self.sparse_recons = sparse_recons
+        self.sparse_sino = sparse_sino
+        self.masks = masks
+        self.theta = theta
+        self.x_size = x_size
+        self.y_size = y_size
+        self.num_proj_pix = num_proj_pix
+        self.index = [i for i in range(len(sparse_recons))]
 
     def __getitem__(self, index):
-        d = self.transform(self.data[index])
-        return d, 0     # return zero as label.
+        # d = self.transform(self.sparse_recons[index])
+        sparse_reconstruction = torch.from_numpy(self.sparse_recons[index]).float()
+        sparse_sinogram = torch.from_numpy(self.sparse_sino[index]).float()
+        angles = torch.from_numpy(self.theta[self.masks[index]]).float()
+        return (sparse_reconstruction, sparse_sinogram, angles)
 
     def __len__(self):
-        return len(self.data)
+        return len(self.sparse_recons)
 
 class OMNIGLOT(Dataset):
     def __init__(self, data, transform):
@@ -149,7 +160,6 @@ def get_loaders_eval(dataset, args):
         valid_data = dset.CIFAR10(
             root=args.data, train=False, download=True, transform=valid_transform)
     elif dataset == 'mnist':
-        breakpoint()
         num_classes = 10
         train_transform, valid_transform = _data_transforms_mnist(args)
         train_data = dset.MNIST(
@@ -157,20 +167,39 @@ def get_loaders_eval(dataset, args):
         valid_data = dset.MNIST(
             root=args.data, train=False, download=True, transform=valid_transform)
     elif dataset == 'foam':
-        train_transform, valid_transform = _data_transforms_foam(args)
-        # XXX STOPPED HERE
+        num_classes = 0
+
+        # train_transform, valid_transform = _data_transforms_foam(args)
+
         train_reconstruction = np.load('/home/microway/Documents/NVAE/dataset_foam/train_reconstructions.npy')
         valid_reconstruction = np.load('/home/microway/Documents/NVAE/dataset_foam/valid_reconstructions.npy')
 
-        train_sinogram = np.load('/home/microway/Documents/NVAE/dataset_foam/train_sinograms.npy')
-        valid_sinogram = np.load('/home/microway/Documents/NVAE/dataset_foam/valid_sinograms.npy')
+        train_sparse_sinogram = np.load('/home/microway/Documents/NVAE/dataset_foam/train_sparse_sinograms.npy')
+        valid_sparse_sinogram = np.load('/home/microway/Documents/NVAE/dataset_foam/valid_sparse_sinograms.npy')
 
         train_mask = np.load('/home/microway/Documents/NVAE/dataset_foam/train_masks.npy')
         valid_mask = np.load('/home/microway/Documents/NVAE/dataset_foam/valid_masks.npy')
 
-        train_data = Foam(train_data,train_transform)
-        valid_data = Foam(valid_data,valid_transform)
 
+        train_x_size = np.load('/home/microway/Documents/NVAE/dataset_foam/train_x_size.npy')
+        valid_x_size = np.load('/home/microway/Documents/NVAE/dataset_foam/valid_x_size.npy')
+
+        train_y_size = np.load('/home/microway/Documents/NVAE/dataset_foam/train_y_size.npy')
+        valid_y_size = np.load('/home/microway/Documents/NVAE/dataset_foam/valid_y_size.npy')
+
+        train_num_proj_pix = np.load('/home/microway/Documents/NVAE/dataset_foam/train_num_proj_pix.npy')
+        valid_num_proj_pix = np.load('/home/microway/Documents/NVAE/dataset_foam/valid_num_proj_pix.npy')
+
+        train_theta = np.load('/home/microway/Documents/NVAE/dataset_foam/train_theta.npy')
+        valid_theta = np.load('/home/microway/Documents/NVAE/dataset_foam/valid_theta.npy')
+
+        train_data = Foam(train_reconstruction, train_sparse_sinogram, train_mask, train_theta,
+                          train_x_size, train_y_size, train_num_proj_pix,
+                          )
+        valid_data = Foam(valid_reconstruction, valid_sparse_sinogram, valid_mask, valid_theta,
+                          valid_x_size, valid_y_size, valid_num_proj_pix,
+                          )
+        
     elif dataset == 'stacked_mnist':
         num_classes = 1000
         train_transform, valid_transform = _data_transforms_stacked_mnist(args)
@@ -286,21 +315,17 @@ def _data_transforms_mnist(args):
 
     return train_transform, valid_transform
 
-def _data_transforms_foam(args):
-    """Get data transforms for foam dataset."""
-    train_transform = transforms.Compose([
-        transforms.Pad(padding=2),
-        transforms.ToTensor(),
-        Binarize(),
-    ])
+# def _data_transforms_foam(args):
+#     """Get data transforms for foam dataset."""
+#     train_transform = transforms.Compose([
+#         transforms.ToTensor(),
+#     ])
 
-    valid_transform = transforms.Compose([
-        transforms.Pad(padding=2),
-        transforms.ToTensor(),
-        Binarize(),
-    ])
+#     valid_transform = transforms.Compose([
+#         transforms.ToTensor(),
+#     ])
 
-    return train_transform, valid_transform
+#     return train_transform, valid_transform
 
 def _data_transforms_stacked_mnist(args):
     """Get data transforms for cifar10."""

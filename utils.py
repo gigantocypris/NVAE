@@ -307,6 +307,11 @@ def num_output(dataset):
         return 3 * size * size
     elif dataset == 'ffhq':
         return 3 * 256 * 256
+    elif dataset == 'foam':
+        breakpoint()
+        x_size = int(np.load('/home/microway/Documents/NVAE/dataset_foam/train_x_size.npy'))
+        y_size = int(np.load('/home/microway/Documents/NVAE/dataset_foam/train_y_size.npy'))
+        return x_size * y_size
     else:
         raise NotImplementedError
 
@@ -321,6 +326,12 @@ def get_input_size(dataset):
         return size
     elif dataset == 'ffhq':
         return 256
+    elif dataset == 'foam':
+        breakpoint()
+        x_size = int(np.load('/home/microway/Documents/NVAE/dataset_foam/train_x_size.npy'))
+        y_size = int(np.load('/home/microway/Documents/NVAE/dataset_foam/train_y_size.npy'))
+        assert x_size == y_size
+        return x_size
     else:
         raise NotImplementedError
 

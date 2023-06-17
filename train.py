@@ -144,12 +144,14 @@ def main(args):
 
 
 def train(train_queue, model, cnn_optimizer, grad_scalar, global_step, warmup_iters, writer, logging):
-    breakpoint()
     alpha_i = utils.kl_balancer_coeff(num_scales=model.num_latent_scales,
                                       groups_per_scale=model.groups_per_scale, fun='square')
     nelbo = utils.AvgrageMeter()
     model.train()
+    breakpoint()
     for step, x in enumerate(train_queue):
+        breakpoint()
+        # XXX STOPPED HERE
         x = x[0] if len(x) > 1 else x
         x = x.cuda()
 
@@ -349,7 +351,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, default='mnist',
                         choices=['cifar10', 'mnist', 'omniglot', 'celeba_64', 'celeba_256',
                                  'imagenet_32', 'ffhq', 'lsun_bedroom_128', 'stacked_mnist',
-                                 'lsun_church_128', 'lsun_church_64'],
+                                 'lsun_church_128', 'lsun_church_64', 'foam'],
                         help='which dataset to use')
     parser.add_argument('--data', type=str, default='/tmp/nasvae/data',
                         help='location of the data corpus')
