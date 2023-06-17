@@ -117,7 +117,7 @@ class Foam(Dataset):
     def __init__(self, sparse_recons, sparse_sino, masks, theta, 
                  x_size, y_size, num_proj_pix,
                  ):
-        self.sparse_recons = sparse_recons
+        self.sparse_recons = sparse_recons[:,None,:,:]
         self.sparse_sino = sparse_sino
         self.masks = masks
         self.theta = theta
@@ -131,7 +131,10 @@ class Foam(Dataset):
         sparse_reconstruction = torch.from_numpy(self.sparse_recons[index]).float()
         sparse_sinogram = torch.from_numpy(self.sparse_sino[index]).float()
         angles = torch.from_numpy(self.theta[self.masks[index]]).float()
-        return (sparse_reconstruction, sparse_sinogram, angles)
+        x_size = torch.from_numpy(self.x_size).float()
+        y_size = torch.from_numpy(self.y_size).float()
+        num_proj_pix = torch.from_numpy(self.num_proj_pix).float()
+        return (sparse_reconstruction, sparse_sinogram, angles, x_size, y_size, num_proj_pix)
 
     def __len__(self):
         return len(self.sparse_recons)

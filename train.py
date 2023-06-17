@@ -149,10 +149,17 @@ def train(train_queue, model, cnn_optimizer, grad_scalar, global_step, warmup_it
     nelbo = utils.AvgrageMeter()
     model.train()
     breakpoint()
-    for step, x in enumerate(train_queue):
-        breakpoint()
-        # XXX STOPPED HERE
-        x = x[0] if len(x) > 1 else x
+    for step, x_full in enumerate(train_queue):
+
+        if args.dataset == 'foam':
+            # x_full is (sparse_reconstruction, sparse_sinogram, angles, x_size, y_size, num_proj_pix)
+            x = x_full[0]
+            # import matplotlib.pyplot as plt
+            # plt.imshow(x_full[0][0]);plt.save('sparse_recon.png')
+        else:
+            x = x_full
+            x = x[0] if len(x) > 1 else x
+
         x = x.cuda()
 
         # change bit length

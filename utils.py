@@ -328,10 +328,8 @@ def get_input_size(dataset):
         return 256
     elif dataset == 'foam':
         breakpoint()
-        x_size = int(np.load('/home/microway/Documents/NVAE/dataset_foam/train_x_size.npy'))
-        y_size = int(np.load('/home/microway/Documents/NVAE/dataset_foam/train_y_size.npy'))
-        assert x_size == y_size
-        return x_size
+        size = int(np.load('/home/microway/Documents/NVAE/dataset_foam/train_num_proj_pix.npy'))
+        return size
     else:
         raise NotImplementedError
 
