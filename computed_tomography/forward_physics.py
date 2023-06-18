@@ -35,7 +35,8 @@ def project_torch(phantom, theta_degrees, pad=True,
     rotation tutorial: https://kornia-tutorials.readthedocs.io/en/latest/_nbs/rotate_affine.html
     rotation reference: https://kornia.readthedocs.io/en/latest/geometry.transform.html
     '''
-    
+    breakpoint()
+    ### STOPPED HERE
     num_angles = len(theta_degrees)
     if pad:
         phantom = pad_phantom(phantom)

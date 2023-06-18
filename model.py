@@ -329,7 +329,7 @@ class AutoEncoder(nn.Module):
 
     def init_image_conditional(self, mult):
         C_in = int(self.num_channels_dec * mult)
-        if self.dataset in {'mnist', 'omniglot'}:
+        if self.dataset in {'mnist', 'omniglot', 'foam'}:
             C_out = 1
         else:
             if self.num_mix_output == 1:
@@ -486,6 +486,7 @@ class AutoEncoder(nn.Module):
         return logits
 
     def decoder_output(self, logits):
+        breakpoint()
         if self.dataset in {'mnist', 'omniglot','foam'}:
             return Bernoulli(logits=logits)
         elif self.dataset in {'stacked_mnist', 'cifar10', 'celeba_64', 'celeba_256', 'imagenet_32', 'imagenet_64', 'ffhq',

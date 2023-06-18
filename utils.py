@@ -241,6 +241,7 @@ def log_iw(decoder, x, log_q, log_p, crop=False):
 def reconstruction_loss(decoder, x, crop=False):
     from distributions import Normal, DiscMixLogistic
 
+    breakpoint()
     recon = decoder.log_prob(x)
     if crop:
         recon = recon[:, :, 2:30, 2:30]

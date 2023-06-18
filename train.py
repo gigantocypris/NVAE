@@ -181,7 +181,8 @@ def train(train_queue, model, cnn_optimizer, grad_scalar, global_step, warmup_it
 
             output = model.decoder_output(logits)
             breakpoint()
-            # output = model.forward_physics(output.sample())
+            theta_degrees = x_full[2]*180/np.pi
+            output = model.forward_physics(output.sample(), theta_degrees, args.pnm)
             kl_coeff = utils.kl_coeff(global_step, args.kl_anneal_portion * args.num_total_iter,
                                       args.kl_const_portion * args.num_total_iter, args.kl_const_coeff)
 
@@ -429,6 +430,9 @@ if __name__ == '__main__':
                         help='number of cell for each conditional in decoder')
     parser.add_argument('--num_mixture_dec', type=int, default=10,
                         help='number of mixture components in decoder. set to 1 for Normal decoder.')
+    # physics parameters
+    parser.add_argument('--pnm', dest='pnm', type=float, default=1e3,
+                        help='poisson noise multiplier, higher value means higher SNR')
     # NAS
     parser.add_argument('--use_se', action='store_true', default=False,
                         help='This flag enables squeeze and excitation.')
