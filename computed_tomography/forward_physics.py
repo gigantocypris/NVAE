@@ -32,12 +32,13 @@ def project_torch(phantom, theta_degrees, pad=True,
                   ):
     '''
     phantom is batch_size x img_size_x x img_size_y x 1
+    theta_degrees is batch_size x num_angles
     rotation tutorial: https://kornia-tutorials.readthedocs.io/en/latest/_nbs/rotate_affine.html
     rotation reference: https://kornia.readthedocs.io/en/latest/geometry.transform.html
     '''
     breakpoint()
     ### STOPPED HERE
-    num_angles = len(theta_degrees)
+    num_angles = theta_degrees.shape[1]
     if pad:
         phantom = pad_phantom(phantom)
     
