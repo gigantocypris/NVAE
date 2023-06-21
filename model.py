@@ -498,9 +498,10 @@ class AutoEncoder(nn.Module):
         else:
             raise NotImplementedError
 
-    def forward_physics(self, phantom, theta_degrees, poisson_noise_multiplier, pad=True):
+    def forward_physics(self, phantom, theta_degrees, poisson_noise_multiplier, pad):
         sino = project_torch(phantom, theta_degrees, pad=pad)
-        sino_dist = Normal(sino, np.log(np.sqrt(sino/poisson_noise_multiplier)))
+        sino_dist = Normal(sino, torch.log(torch.sqrt(sino/poisson_noise_multiplier)), use_soft_clamp=False)
+        return sino_dist
 
     def spectral_norm_parallel(self):
         """ This method computes spectral normalization for all conv layers in parallel. This method should be called

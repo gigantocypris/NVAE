@@ -156,11 +156,16 @@ def train(train_queue, model, cnn_optimizer, grad_scalar, global_step, warmup_it
             x = x_full[0]
             # import matplotlib.pyplot as plt
             # plt.imshow(x_full[0][0]);plt.save('sparse_recon.png')
+
+            theta = x_full[2]
+            theta = theta.cuda()
+
         else:
             x = x_full
             x = x[0] if len(x) > 1 else x
 
         x = x.cuda()
+        breakpoint()
 
         # change bit length
         x = utils.pre_process(x, args.num_x_bits)
@@ -179,13 +184,21 @@ def train(train_queue, model, cnn_optimizer, grad_scalar, global_step, warmup_it
         with autocast():
             logits, log_q, log_p, kl_all, kl_diag = model(x)
 
-            output = model.decoder_output(logits)
+            output = model.decoder_output(logits) # batch x channels x num_proj_pix x num_proj_pix
             breakpoint()
-            theta_degrees = x_full[2]*180/np.pi
-            output = model.forward_physics(output.sample(), theta_degrees, args.pnm)
+            theta_degrees = theta*180/np.pi
+            output_sample = output.sample()
+
+            # move channel dimension to the last dimension
+            output_sample = torch.transpose(output_sample, 1,2)
+            output_sample = torch.transpose(output_sample, 2,3)
+
+            # output is batch x num_angles x num_proj_pix
+            output = model.forward_physics(output_sample, theta_degrees.half(), args.pnm, pad=False)
+
             kl_coeff = utils.kl_coeff(global_step, args.kl_anneal_portion * args.num_total_iter,
                                       args.kl_const_portion * args.num_total_iter, args.kl_const_coeff)
-
+            breakpoint() # STOPPED HERE
             recon_loss = utils.reconstruction_loss(output, x, crop=model.crop_output)
             balanced_kl, kl_coeffs, kl_vals = utils.kl_balancer(kl_all, kl_coeff, kl_balance=True, alpha_i=alpha_i)
 

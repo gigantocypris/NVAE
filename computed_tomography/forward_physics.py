@@ -48,7 +48,6 @@ def project_torch(phantom, theta_degrees, pad=True,
     phantom = torch.transpose(phantom, 0,1)
     
     # imgs_rot = kornia.geometry.rotate(phantom, -theta_degrees)
-    # STOPPED HERE
 
     '''
     def rot_no_batch_dim(phantom, theta_degrees): 
@@ -68,5 +67,5 @@ def project_torch(phantom, theta_degrees, pad=True,
     
     # transpose back
     sino = torch.transpose(sino, 0, 1)
-
+    breakpoint()
     return(sino)

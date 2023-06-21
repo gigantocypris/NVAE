@@ -25,9 +25,13 @@ def sample_normal_jit(mu, sigma):
 
 
 class Normal:
-    def __init__(self, mu, log_sigma, temp=1.):
-        self.mu = soft_clamp5(mu)
-        log_sigma = soft_clamp5(log_sigma)
+    def __init__(self, mu, log_sigma, temp=1., use_soft_clamp=True):
+        if use_soft_clamp:
+            self.mu = soft_clamp5(mu)
+            log_sigma = soft_clamp5(log_sigma)
+        else:
+            self.mu = mu
+            log_sigma = log_sigma
         self.sigma = torch.exp(log_sigma) + 1e-2      # we don't need this after soft clamp
         if temp != 1.:
             self.sigma *= temp
