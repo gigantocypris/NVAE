@@ -315,7 +315,7 @@ cd working_dir
 Run the following to create a synthetic foam dataset of 50 examples, saved in the subfolder `dataset_foam` of the current directory:
 
 ```
-python $NVAE_PATH/computed_tomography/create_foam_images.py -n 50
+python $NVAE_PATH/computed_tomography/create_foam_images.py -t 10 -v 10
 ```
 
 To visualize:
@@ -329,9 +329,14 @@ plt.imshow(foam_imgs[0,:,:]); plt.show()
 
 To create sinograms from the foam images, create sparse sinograms, and reconstruct from the sparse sinograms:
 ```
-python $NVAE_PATH/computed_tomography/images_to_dataset.py -n 50
+python $NVAE_PATH/computed_tomography/images_to_dataset.py -n 10 -d train
 ```
 (If needed, `export KMP_DUPLICATE_LIB_OK=TRUE`)
+
+Test forward_physics:
+```
+python $NVAE_PATH/computed_tomography/test_forward_physics.py 
+```
 
 # TODO
 

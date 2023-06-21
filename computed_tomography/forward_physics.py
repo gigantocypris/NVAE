@@ -47,7 +47,23 @@ def project_torch(phantom, theta_degrees, pad=True,
     phantom = torch.transpose(phantom, 1,2)
     phantom = torch.transpose(phantom, 0,1)
     
-    imgs_rot = kornia.geometry.rotate(phantom, -theta_degrees)
+    # imgs_rot = kornia.geometry.rotate(phantom, -theta_degrees)
+    # STOPPED HERE
+
+    '''
+    def rot_no_batch_dim(phantom, theta_degrees): 
+        phantom_expand = torch.unsqueeze(phantom, 1)
+        rot_angles = -theta_degrees[0]
+        return kornia.geometry.rotate(phantom_expand, rot_angles)
+    
+    rot_no_batch_dim_1 = torch.func.functionalize(rot_no_batch_dim)
+
+    imgs_rot = torch.vmap(rot_no_batch_dim_1,in_dims=1,out_dims=1)(phantom, -theta_degrees[None,:,:])
+    '''
+    imgs_rot = []
+    for i in range(theta_degrees.shape[0]):
+        imgs_rot.append(kornia.geometry.rotate(torch.unsqueeze(phantom[:,i,:,:],1), -theta_degrees[i]))
+    imgs_rot = torch.cat(imgs_rot, dim=1)
     sino = torch.sum(imgs_rot, 2)
     
     # transpose back

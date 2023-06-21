@@ -12,15 +12,17 @@ if __name__ == '__main__':
     theta = np.linspace(0, np.pi, 180, endpoint=False) # projection angles
 
     # get a phantom
-    img = np.load('foam_training.npy')[0:3]
+    img = np.load('foam_train.npy')[0:3]
 
     # get the sinogram with tomopy
     proj_0 = create_sinogram(img, theta, pad=True)
 
     # get the sinogram with forward_physics.py
     phantom = torch.Tensor(img)
+
     theta_degrees = theta*180/np.pi
-    proj_1 = project_torch(phantom[:,:,:,None], torch.Tensor(theta_degrees), pad=True)
+    theta_degrees = torch.stack([torch.Tensor(theta_degrees)]*phantom.shape[0], axis=0)
+    proj_1 = project_torch(phantom[:,:,:,None], theta_degrees, pad=True)
 
     fig, (ax1, ax2) = plt.subplots(1, 2)
     fig.suptitle('Sinogram Comparison')
