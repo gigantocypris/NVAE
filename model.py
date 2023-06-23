@@ -15,6 +15,8 @@ from neural_operations import OPS, EncCombinerCell, DecCombinerCell, Conv2D, get
 from neural_ar_operations import ARConv2d, ARInvertedResidual, MixLogCDFParam, mix_log_cdf_flow
 from neural_ar_operations import ELUConv as ARELUConv
 from torch.distributions.bernoulli import Bernoulli
+from torch.distributions.relaxed_bernoulli import RelaxedBernoulli
+from torch.distributions import normal
 
 from utils import get_stride_for_cell_type, get_input_size, groups_per_scale
 from distributions import Normal, DiscMixLogistic, NormalDecoder
@@ -485,10 +487,27 @@ class AutoEncoder(nn.Module):
         logits = self.image_conditional(s)
         return logits
 
-    def decoder_output(self, logits):
-        breakpoint()
-        if self.dataset in {'mnist', 'omniglot','foam'}:
+    def decoder_output(self, logits, temperature=None,
+                       theta_degrees=None, poisson_noise_multiplier=None, pad=None):
+        if self.dataset in {'mnist', 'omniglot'}:
             return Bernoulli(logits=logits)
+        elif self.dataset in {'foam'}:
+            if 0:
+                object_dist = RelaxedBernoulli(temperature, logits=logits)
+                phantom = object_dist.sample()
+            else:
+                phantom = torch.sigmoid(logits)
+            
+            # enforce that phantom that is nonnegative
+
+            # phantom is batch x channels x num_proj_pix x num_proj_pix
+            # move channel dimension to the last dimension
+            phantom = torch.transpose(phantom, 1,2)
+            phantom = torch.transpose(phantom, 2,3)
+
+            sino = project_torch(phantom, theta_degrees, pad=pad)
+            sino_dist = normal.Normal(sino, torch.sqrt(sino/poisson_noise_multiplier))
+            return sino_dist
         elif self.dataset in {'stacked_mnist', 'cifar10', 'celeba_64', 'celeba_256', 'imagenet_32', 'imagenet_64', 'ffhq',
                               'lsun_bedroom_128', 'lsun_bedroom_256', 'lsun_church_64', 'lsun_church_128'}:
             if self.num_mix_output == 1:
@@ -498,10 +517,10 @@ class AutoEncoder(nn.Module):
         else:
             raise NotImplementedError
 
-    def forward_physics(self, phantom, theta_degrees, poisson_noise_multiplier, pad):
-        sino = project_torch(phantom, theta_degrees, pad=pad)
-        sino_dist = Normal(sino, torch.log(torch.sqrt(sino/poisson_noise_multiplier)), use_soft_clamp=False)
-        return sino_dist
+    # def forward_physics(self, phantom, theta_degrees, poisson_noise_multiplier, pad):
+    #     sino = project_torch(phantom, theta_degrees, pad=pad)
+    #     sino_dist = normal.Normal(sino, torch.sqrt(sino/poisson_noise_multiplier))
+    #     return sino_dist
 
     def spectral_norm_parallel(self):
         """ This method computes spectral normalization for all conv layers in parallel. This method should be called

@@ -25,7 +25,6 @@ from fid.inception import InceptionV3
 
 
 def main(args):
-    breakpoint()
     # ensures that weight initializations are all the same
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -101,15 +100,15 @@ def main(args):
         # generate samples less frequently
         eval_freq = 1 if args.epochs <= 50 else 20
         if epoch % eval_freq == 0 or epoch == (args.epochs - 1):
-            with torch.no_grad():
-                num_samples = 16
-                n = int(np.floor(np.sqrt(num_samples)))
-                for t in [0.7, 0.8, 0.9, 1.0]:
-                    logits = model.sample(num_samples, t)
-                    output = model.decoder_output(logits)
-                    output_img = output.mean if isinstance(output, torch.distributions.bernoulli.Bernoulli) else output.sample(t)
-                    output_tiled = utils.tile_image(output_img, n)
-                    writer.add_image('generated_%0.1f' % t, output_tiled, global_step)
+            # with torch.no_grad():
+            #     num_samples = 16
+            #     n = int(np.floor(np.sqrt(num_samples)))
+            #     for t in [0.7, 0.8, 0.9, 1.0]:
+            #         logits = model.sample(num_samples, t)
+            #         output = model.decoder_output(logits)
+            #         output_img = output.mean if isinstance(output, torch.distributions.bernoulli.Bernoulli) else output.sample(t)
+            #         output_tiled = utils.tile_image(output_img, n)
+            #         writer.add_image('generated_%0.1f' % t, output_tiled, global_step)
 
             valid_neg_log_p, valid_nelbo = test(valid_queue, model, num_samples=10, args=args, logging=logging)
             logging.info('valid_nelbo %f', valid_nelbo)
@@ -148,7 +147,6 @@ def train(train_queue, model, cnn_optimizer, grad_scalar, global_step, warmup_it
                                       groups_per_scale=model.groups_per_scale, fun='square')
     nelbo = utils.AvgrageMeter()
     model.train()
-    breakpoint()
     for step, x_full in enumerate(train_queue):
 
         if args.dataset == 'foam':
@@ -159,13 +157,11 @@ def train(train_queue, model, cnn_optimizer, grad_scalar, global_step, warmup_it
 
             theta = x_full[2]
             theta = theta.cuda()
-
         else:
             x = x_full
             x = x[0] if len(x) > 1 else x
 
         x = x.cuda()
-        breakpoint()
 
         # change bit length
         x = utils.pre_process(x, args.num_x_bits)
@@ -183,23 +179,15 @@ def train(train_queue, model, cnn_optimizer, grad_scalar, global_step, warmup_it
         cnn_optimizer.zero_grad()
         with autocast():
             logits, log_q, log_p, kl_all, kl_diag = model(x)
+            temperature = torch.tensor([args.temp_bernoulli])
+            temperature = temperature.half().cuda()
 
-            output = model.decoder_output(logits) # batch x channels x num_proj_pix x num_proj_pix
-            breakpoint()
             theta_degrees = theta*180/np.pi
-            output_sample = output.sample()
-
-            # move channel dimension to the last dimension
-            output_sample = torch.transpose(output_sample, 1,2)
-            output_sample = torch.transpose(output_sample, 2,3)
-
-            # output is batch x num_angles x num_proj_pix
-            output = model.forward_physics(output_sample, theta_degrees.half(), args.pnm, pad=False)
-
+            output = model.decoder_output(logits, temperature,
+                                          theta_degrees.half(), args.pnm, pad=False) 
             kl_coeff = utils.kl_coeff(global_step, args.kl_anneal_portion * args.num_total_iter,
                                       args.kl_const_portion * args.num_total_iter, args.kl_const_coeff)
-            breakpoint() # STOPPED HERE
-            recon_loss = utils.reconstruction_loss(output, x, crop=model.crop_output)
+            recon_loss = utils.reconstruction_loss(output, x_full[1].cuda(), args.dataset, crop=model.crop_output)
             balanced_kl, kl_coeffs, kl_vals = utils.kl_balancer(kl_all, kl_coeff, kl_balance=True, alpha_i=alpha_i)
 
             nelbo_batch = recon_loss + balanced_kl
@@ -226,6 +214,7 @@ def train(train_queue, model, cnn_optimizer, grad_scalar, global_step, warmup_it
             if (global_step + 1) % 1000 == 0:  # reduced frequency
                 n = int(np.floor(np.sqrt(x.size(0))))
                 x_img = x[:n*n]
+                breakpoint()
                 output_img = output.mean if isinstance(output, torch.distributions.bernoulli.Bernoulli) else output.sample()
                 output_img = output_img[:n*n]
                 x_tiled = utils.tile_image(x_img, n)
@@ -271,8 +260,19 @@ def test(valid_queue, model, num_samples, args, logging):
     nelbo_avg = utils.AvgrageMeter()
     neg_log_p_avg = utils.AvgrageMeter()
     model.eval()
-    for step, x in enumerate(valid_queue):
-        x = x[0] if len(x) > 1 else x
+    for step, x_full in enumerate(valid_queue):
+        if args.dataset == 'foam':
+            # x_full is (sparse_reconstruction, sparse_sinogram, angles, x_size, y_size, num_proj_pix)
+            x = x_full[0]
+            # import matplotlib.pyplot as plt
+            # plt.imshow(x_full[0][0]);plt.save('sparse_recon.png')
+
+            theta = x_full[2]
+            theta = theta.cuda()
+        else:
+            x = x_full
+            x = x[0] if len(x) > 1 else x
+
         x = x.cuda()
 
         # change bit length
@@ -282,12 +282,16 @@ def test(valid_queue, model, num_samples, args, logging):
             nelbo, log_iw = [], []
             for k in range(num_samples):
                 logits, log_q, log_p, kl_all, _ = model(x)
-                output = model.decoder_output(logits)
-                recon_loss = utils.reconstruction_loss(output, x, crop=model.crop_output)
+                temperature = torch.tensor([args.temp_bernoulli])
+                temperature = temperature.half().cuda()
+
+                theta_degrees = theta*180/np.pi
+                output = model.decoder_output(logits.half(), temperature,theta_degrees.half(), args.pnm, pad=False)
+                recon_loss = utils.reconstruction_loss(output, x_full[1].cuda(), args.dataset, crop=model.crop_output)
                 balanced_kl, _, _ = utils.kl_balancer(kl_all, kl_balance=False)
                 nelbo_batch = recon_loss + balanced_kl
                 nelbo.append(nelbo_batch)
-                log_iw.append(utils.log_iw(output, x, log_q, log_p, crop=model.crop_output))
+                log_iw.append(utils.log_iw(output, x_full[1].cuda(), log_q, log_p, args.dataset, crop=model.crop_output))
 
             nelbo = torch.mean(torch.stack(nelbo, dim=1))
             log_p = torch.mean(torch.logsumexp(torch.stack(log_iw, dim=1), dim=1) - np.log(num_samples))
@@ -443,6 +447,8 @@ if __name__ == '__main__':
                         help='number of cell for each conditional in decoder')
     parser.add_argument('--num_mixture_dec', type=int, default=10,
                         help='number of mixture components in decoder. set to 1 for Normal decoder.')
+    parser.add_argument('--temp', dest='temp_bernoulli', type=float, default=2.2,
+                        help='temperature of relaxed bernoulli')
     # physics parameters
     parser.add_argument('--pnm', dest='pnm', type=float, default=1e3,
                         help='poisson noise multiplier, higher value means higher SNR')

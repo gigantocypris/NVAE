@@ -233,20 +233,19 @@ def kl_coeff(step, total_step, constant_step, min_kl_coeff):
     return max(min((step - constant_step) / total_step, 1.0), min_kl_coeff)
 
 
-def log_iw(decoder, x, log_q, log_p, crop=False):
-    recon = reconstruction_loss(decoder, x, crop)
+def log_iw(decoder, x, log_q, log_p, dataset, crop=False):
+    recon = reconstruction_loss(decoder, x, dataset, crop)
     return - recon - log_q + log_p
 
 
-def reconstruction_loss(decoder, x, crop=False):
+def reconstruction_loss(decoder, x, dataset, crop=False):
     from distributions import Normal, DiscMixLogistic
 
-    breakpoint()
     recon = decoder.log_prob(x)
     if crop:
         recon = recon[:, :, 2:30, 2:30]
     
-    if isinstance(decoder, DiscMixLogistic):
+    if isinstance(decoder, DiscMixLogistic) or dataset in {'foam'}:
         return - torch.sum(recon, dim=[1, 2])    # summation over RGB is done.
     else:
         return - torch.sum(recon, dim=[1, 2, 3])
@@ -309,10 +308,8 @@ def num_output(dataset):
     elif dataset == 'ffhq':
         return 3 * 256 * 256
     elif dataset == 'foam':
-        breakpoint()
-        x_size = int(np.load('/home/microway/Documents/NVAE/dataset_foam/train_x_size.npy'))
-        y_size = int(np.load('/home/microway/Documents/NVAE/dataset_foam/train_y_size.npy'))
-        return x_size * y_size
+        size = int(np.load('/home/microway/Documents/NVAE/dataset_foam/train_num_proj_pix.npy'))
+        return size * size
     else:
         raise NotImplementedError
 
@@ -328,7 +325,6 @@ def get_input_size(dataset):
     elif dataset == 'ffhq':
         return 256
     elif dataset == 'foam':
-        breakpoint()
         size = int(np.load('/home/microway/Documents/NVAE/dataset_foam/train_num_proj_pix.npy'))
         return size
     else:
