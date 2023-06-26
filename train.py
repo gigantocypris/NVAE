@@ -85,14 +85,18 @@ def main(args):
             train_queue.sampler.set_epoch(global_step + args.seed)
             valid_queue.sampler.set_epoch(0)
 
-        if epoch > args.warmup_epochs:
-            cnn_scheduler.step()
 
         # Logging.
         logging.info('epoch %d', epoch)
 
         # Training.
-        train_nelbo, global_step = train(train_queue, model, cnn_optimizer, grad_scalar, global_step, warmup_iters, writer, logging)
+        train_nelbo, global_step = train(train_queue, model, cnn_optimizer, grad_scalar, 
+                                         global_step, warmup_iters, writer, logging,
+                                        )
+        
+        if epoch > args.warmup_epochs:
+            cnn_scheduler.step()
+
         logging.info('train_nelbo %f', train_nelbo)
         writer.add_scalar('train/nelbo', train_nelbo, global_step)
 
@@ -138,11 +142,13 @@ def main(args):
     writer.add_scalar('val/nelbo', valid_nelbo, epoch + 1)
     writer.add_scalar('val/bpd_log_p', valid_neg_log_p * bpd_coeff, epoch + 1)
     writer.add_scalar('val/bpd_elbo', valid_nelbo * bpd_coeff, epoch + 1)
-    writer.close()
     """
+    writer.close()
 
 
-def train(train_queue, model, cnn_optimizer, grad_scalar, global_step, warmup_iters, writer, logging):
+def train(train_queue, model, cnn_optimizer, grad_scalar, 
+          global_step, warmup_iters, writer, logging,
+          ):
     alpha_i = utils.kl_balancer_coeff(num_scales=model.num_latent_scales,
                                       groups_per_scale=model.groups_per_scale, fun='square')
     nelbo = utils.AvgrageMeter()
@@ -183,8 +189,7 @@ def train(train_queue, model, cnn_optimizer, grad_scalar, global_step, warmup_it
             temperature = temperature.half().cuda()
 
             theta_degrees = theta*180/np.pi
-            output = model.decoder_output(logits, temperature,
-                                          theta_degrees.half(), args.pnm, pad=False) 
+            output = model.decoder_output(logits, temperature, theta_degrees.half(), args.pnm, pad=False) 
             kl_coeff = utils.kl_coeff(global_step, args.kl_anneal_portion * args.num_total_iter,
                                       args.kl_const_portion * args.num_total_iter, args.kl_const_coeff)
             recon_loss = utils.reconstruction_loss(output, x_full[1].cuda(), args.dataset, crop=model.crop_output)
@@ -209,12 +214,13 @@ def train(train_queue, model, cnn_optimizer, grad_scalar, global_step, warmup_it
         grad_scalar.step(cnn_optimizer)
         grad_scalar.update()
         nelbo.update(loss.data, 1)
-
-        if (global_step + 1) % 100 == 0:
-            if (global_step + 1) % 1000 == 0:  # reduced frequency
-                n = int(np.floor(np.sqrt(x.size(0))))
-                x_img = x[:n*n]
+        
+        if (global_step + 1) % 3 == 0:
+            if (global_step + 1) % 3 == 0:  # reduced frequency
                 breakpoint()
+                n = int(np.floor(np.sqrt(x.size(0))))
+                breakpoint()
+                x_img = x[:n*n]
                 output_img = output.mean if isinstance(output, torch.distributions.bernoulli.Bernoulli) else output.sample()
                 output_img = output_img[:n*n]
                 x_tiled = utils.tile_image(x_img, n)
