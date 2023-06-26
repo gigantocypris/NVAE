@@ -109,7 +109,7 @@ def main(args):
             #     n = int(np.floor(np.sqrt(num_samples)))
             #     for t in [0.7, 0.8, 0.9, 1.0]:
             #         logits = model.sample(num_samples, t)
-            #         output = model.decoder_output(logits)
+            #         output, phantom = model.decoder_output(logits)
             #         output_img = output.mean if isinstance(output, torch.distributions.bernoulli.Bernoulli) else output.sample(t)
             #         output_tiled = utils.tile_image(output_img, n)
             #         writer.add_image('generated_%0.1f' % t, output_tiled, global_step)
@@ -189,7 +189,7 @@ def train(train_queue, model, cnn_optimizer, grad_scalar,
             temperature = temperature.half().cuda()
 
             theta_degrees = theta*180/np.pi
-            output = model.decoder_output(logits, temperature, theta_degrees.half(), args.pnm, pad=False) 
+            output, phantom = model.decoder_output(logits, temperature, theta_degrees.half(), args.pnm, pad=False) 
             kl_coeff = utils.kl_coeff(global_step, args.kl_anneal_portion * args.num_total_iter,
                                       args.kl_const_portion * args.num_total_iter, args.kl_const_coeff)
             recon_loss = utils.reconstruction_loss(output, x_full[1].cuda(), args.dataset, crop=model.crop_output)
@@ -214,19 +214,35 @@ def train(train_queue, model, cnn_optimizer, grad_scalar,
         grad_scalar.step(cnn_optimizer)
         grad_scalar.update()
         nelbo.update(loss.data, 1)
-        
-        if (global_step + 1) % 3 == 0:
-            if (global_step + 1) % 3 == 0:  # reduced frequency
-                breakpoint()
+
+        if (global_step + 1) % 5 == 0:
+            if (global_step + 1) % 10 == 0:  # reduced frequency
                 n = int(np.floor(np.sqrt(x.size(0))))
-                breakpoint()
+
                 x_img = x[:n*n]
+                x_tiled = utils.tile_image(x_img, n)
+                writer.add_image('input image', x_tiled, global_step)
+
                 output_img = output.mean if isinstance(output, torch.distributions.bernoulli.Bernoulli) else output.sample()
                 output_img = output_img[:n*n]
-                x_tiled = utils.tile_image(x_img, n)
-                output_tiled = utils.tile_image(output_img, n)
-                in_out_tiled = torch.cat((x_tiled, output_tiled), dim=2)
-                writer.add_image('reconstruction', in_out_tiled, global_step)
+                output_img = output_img[:,None,:,:]
+                output_tiled = utils.tile_image(output_img, n)     
+
+                x_sino = x_full[1].cuda()
+                x_sino = x_sino[:n*n]
+                x_sino = x_sino[:,None,:,:]
+                x_sino_tiled = utils.tile_image(x_sino, n)  
+                in_out_tiled = torch.cat((x_sino_tiled, output_tiled), dim=2)
+                writer.add_image('sinogram reconstruction', in_out_tiled, global_step)
+
+                phantom_sample = phantom
+                phantom_sample = phantom_sample[:n*n]
+                phantom_sample = torch.transpose(phantom_sample,2,3)
+                phantom_sample = torch.transpose(phantom_sample,1,2)
+                phantom_tiled = utils.tile_image(phantom_sample, n)
+                print('XXX')
+                print(torch.sum(phantom_tiled))
+                writer.add_image('phantom_reconstruction', phantom_tiled, global_step)
 
             # norm
             writer.add_scalar('train/norm_loss', norm_loss, global_step)
@@ -240,7 +256,7 @@ def train(train_queue, model, cnn_optimizer, grad_scalar,
                               'param_groups'][0]['lr'], global_step)
             writer.add_scalar('train/nelbo_iter', loss, global_step)
             writer.add_scalar('train/kl_iter', torch.mean(sum(kl_all)), global_step)
-            writer.add_scalar('train/recon_iter', torch.mean(utils.reconstruction_loss(output, x, crop=model.crop_output)), global_step)
+            writer.add_scalar('train/recon_iter', torch.mean(utils.reconstruction_loss(output, x_full[1].cuda(), args.dataset, crop=model.crop_output)), global_step)
             writer.add_scalar('kl_coeff/coeff', kl_coeff, global_step)
             total_active = 0
             for i, kl_diag_i in enumerate(kl_diag):
@@ -292,7 +308,7 @@ def test(valid_queue, model, num_samples, args, logging):
                 temperature = temperature.half().cuda()
 
                 theta_degrees = theta*180/np.pi
-                output = model.decoder_output(logits.half(), temperature,theta_degrees.half(), args.pnm, pad=False)
+                output, phantom = model.decoder_output(logits.half(), temperature,theta_degrees.half(), args.pnm, pad=False)
                 recon_loss = utils.reconstruction_loss(output, x_full[1].cuda(), args.dataset, crop=model.crop_output)
                 balanced_kl, _, _ = utils.kl_balancer(kl_all, kl_balance=False)
                 nelbo_batch = recon_loss + balanced_kl
@@ -319,7 +335,7 @@ def create_generator_vae(model, batch_size, num_total_samples):
     for i in range(num_iters):
         with torch.no_grad():
             logits = model.sample(batch_size, 1.0)
-            output = model.decoder_output(logits)
+            output, phantom = model.decoder_output(logits)
             output_img = output.mean if isinstance(output, torch.distributions.bernoulli.Bernoulli) else output.mean()
         yield output_img.float()
 

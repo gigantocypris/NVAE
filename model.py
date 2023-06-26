@@ -498,11 +498,11 @@ class AutoEncoder(nn.Module):
             # process the output of the decoder into a distribution
             # sample the distribution to get the phantom
             # enforce that phantom that is nonnegative through the distribution or sampling
-            if 1:
-                object_dist = RelaxedBernoulli(temperature, logits=logits)
-                phantom = object_dist.rsample().half()
-            else:
-                phantom = torch.sigmoid(logits)
+
+            object_dist = RelaxedBernoulli(temperature, logits=logits)
+            phantom = object_dist.rsample().half()
+
+            # phantom = torch.sigmoid(logits)
             
             # phantom is batch x channels x num_proj_pix x num_proj_pix
             # move channel dimension to the last dimension
@@ -511,7 +511,8 @@ class AutoEncoder(nn.Module):
 
             sino = project_torch(phantom, theta_degrees, pad=pad)
             sino_dist = normal.Normal(sino, 1e-2 + torch.sqrt(sino/poisson_noise_multiplier))
-            return sino_dist
+            return sino_dist, phantom.float()
+        
         elif self.dataset in {'stacked_mnist', 'cifar10', 'celeba_64', 'celeba_256', 'imagenet_32', 'imagenet_64', 'ffhq',
                               'lsun_bedroom_128', 'lsun_bedroom_256', 'lsun_church_64', 'lsun_church_128'}:
             if self.num_mix_output == 1:
